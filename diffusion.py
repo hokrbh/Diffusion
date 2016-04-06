@@ -31,6 +31,9 @@ def surfacePvsTime(t, radius, mu_t, mu_a, L_s):
             0, radius)
     return P
 
+def longTimeP(t, radius, mu_t, mu_a, L_s):
+    return (np.pi*radius**2*c)/((4.0*np.pi*D*c*t)**1.5) * (L_s*(L_s+l_t))/(D*c*t)*np.exp(-mu_a*c*t)
+
 mu_s = 2083.0 # mm^{-1} 
 g = 0.6
 mu_a = 0.0 # mm^{-1}
@@ -38,7 +41,7 @@ c = 0.299792458 # mm/ps
 n1 = 1.0 # background index
 n2 = 1.6 # index of the medium
 radius = 0.5 # collection radius into the detector
-t_end = 1000 # ps
+t_end = 10000 # ps
 num_t = 1000 # number of time steps
 
 mu_t = (1.0-g)*mu_s + mu_a # mm^{-1}
@@ -50,20 +53,25 @@ t_spread = radius**2/(8*D*c)
 
 time = np.empty(num_t)
 power = np.empty(num_t)
+powerLong = np.empty(num_t)
 for i in range(0, num_t):
     time[i] = (i+1)*dt
     power[i] = surfacePvsTime(time[i], radius, mu_t, mu_a, L_s)
+    powerLong[i] = longTimeP(time[i], radius, mu_t, mu_a, L_s)
 
 np.savetxt('p_vs_t_diffusion.dat', np.vstack((time,power)).T, \
         header = 'time (ps)\tpower(W)')
 
+np.savetxt('approx.dat', np.vstack((time,power,powerLong)).T, \
+        header = 'time (ps)\tpower(W)\tpower approximation(W)')
+
 plt.figure(1)
-plt.semilogy(time, power, 'r-')
+plt.semilogy(time, power, 'r-', time, powerLong, 'b-')
 plt.xlabel(r"$t$ (ps)")
 plt.ylabel(r"$P ( t )$ W")
 
 plt.figure(2)
-plt.loglog(time, power, 'r-')
+plt.loglog(time, power, 'r-', time, powerLong, 'b-')
 plt.xlabel(r"$t$ (ps)")
 plt.ylabel(r"$P ( t )$ W")
 
