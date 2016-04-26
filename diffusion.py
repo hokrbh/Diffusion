@@ -27,9 +27,12 @@ def surfacePhi(rho, t, mu_t, mu_a, L_s):
             (np.exp(-l_t**2/(4.0*c*D*t)) - np.exp(-(2.0*L_s+l_t)**2/(4.0*c*D*t)))
             
 def surfacePvsTime(t, radius, mu_t, mu_a, L_s):
-    P, error = integrate.quad(lambda x: 2.0*np.pi*x*surfacePhi(x, t, mu_t, mu_a, L_s), \
-            0, radius)
-    return P
+    return c/(4.0*np.pi*c*D*t)**0.5 * np.exp(-mu_a*c*t) * (1.0 - np.exp(-radius**2.0/(4.0*c*D*t))) * \
+            ( np.exp(-(l_t)**2/(4.0*c*D*t)) - np.exp(-(2.0*L_s+l_t)**2/(4.0*c*D*t)) )
+
+def surfacePvsTimeHole(t, radius, mu_t, mu_a, L_s, h):
+    return c/(4.0*np.pi*c*D*t)**0.5 * np.exp(-mu_a*c*t) * (1.0 - np.exp(-radius**2.0/(4.0*c*D*t))) * \
+            ( np.exp(-(l_t+h)**2/(4.0*c*D*t)) - np.exp(-(2.0*L_s+l_t+h)**2/(4.0*c*D*t)) )
 
 def longTimeP(t, radius, mu_t, mu_a, L_s):
     return (np.pi*radius**2*c)/((4.0*np.pi*D*c*t)**1.5) * (L_s*(L_s+l_t))/(D*c*t)*np.exp(-mu_a*c*t)
@@ -72,6 +75,14 @@ plt.ylabel(r"$P ( t )$ W")
 
 plt.figure(2)
 plt.loglog(time, power, 'r-', time, powerLong, 'b-')
+plt.xlabel(r"$t$ (ps)")
+plt.ylabel(r"$P ( t )$ W")
+
+plt.figure(3)
+plt.loglog(time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.001), 'r-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.01), 'g-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.1), 'b-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 1.0), 'r-')
 plt.xlabel(r"$t$ (ps)")
 plt.ylabel(r"$P ( t )$ W")
 
