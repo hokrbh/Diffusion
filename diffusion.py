@@ -46,6 +46,15 @@ def spatialP_approx(rho, D, l_t, mu_a, L_s):
 def spatialP_approx2(rho, D, l_t, L_s):
     return L_s*(L_s+l_t)/(2.0*np.pi*D*rho**3)
 
+def bh_int(x):
+    return 0.5*np.sqrt(np.pi)*(1.0+x)*np.exp(-x)
+
+def avg_t_theory(h, radius, D, l_t, mu_a, L_s):
+    return 1.0/(2.0*np.sqrt(np.pi)*c*mu_a**(3.0/2.0)*np.sqrt(D)) * ( bh_int((l_t+h)*np.sqrt(mu_a/D)) - bh_int((2.0*L_s+l_t+h)*np.sqrt(mu_a/D)) - bh_int(np.sqrt(mu_a/D*((l_t+h)**2+radius**2))) + bh_int(np.sqrt(mu_a/D*((2.0*L_s+l_t+h)**2+radius**2))) )
+
+def integrand(time, radius, mu_t, mu_a, L_s, h):
+    return time*surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, h)
+
 mu_s = 2083.0 # mm^{-1} 
 g = 0.6
 mu_a = 0.001 # mm^{-1}
@@ -85,6 +94,31 @@ plt.loglog(time, power, 'r-', time, powerLong, 'b-')
 plt.xlabel(r"$t$ (ps)")
 plt.ylabel(r"$P ( t )$ s$^{-1}$")
 
+plt.figure(2)
+plt.loglog(time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.001), 'r-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.01), 'g-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.1), 'b-',\
+        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 1.0), 'r-')
+plt.xlabel(r"$t$ (ps)")
+plt.ylabel(r"$P ( t )$ W")
+plt.ylim([1E-10,1])
+
+h_max = 0.2
+num_h = 11
+dh = h_max/(num_h-1)
+
+depths = np.arange(0, h_max+dh, dh)
+avg_t = np.empty(num_h)
+for i in range(0, num_h):
+    powerTemp = surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, depths[i])
+    result = integrate.quad(integrand, 0, np.inf, args=(radius, mu_t, mu_a, L_s, depths[i]))
+    avg_t[i] = result[0]
+
+plt.figure(3)
+plt.plot(depths, avg_t, 'rx', depths, avg_t_theory(depths, radius, D, l_t, mu_a, L_s), 'bo')
+plt.xlabel(r"$h$ (mm)")
+plt.ylabel(r"$\langle t \rangle$ ps")
+
 rho = np.empty(num_rho)
 #power_s = np.empty(num_rho)
 for i in range(0, num_rho):
@@ -94,18 +128,9 @@ power_s = spatialP(rho, D, l_t, mu_a, L_s)
 power_s_approx = spatialP_approx(rho, D, l_t, mu_a, L_s)
 power_s_approx2 = spatialP_approx2(rho, D, l_t, L_s)
 
-
-plt.figure(2)
+plt.figure(4)
 plt.semilogy(rho, power_s, 'r-', rho, power_s_approx, 'g-', rho, power_s_approx2, 'b-')
 plt.xlabel(r"$\rho$ (mm)")
 plt.ylabel(r"$P ( \rho )$ mm$^{-2}$")
-
-plt.figure(3)
-plt.loglog(time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.001), 'r-',\
-        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.01), 'g-',\
-        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 0.1), 'b-',\
-        time, surfacePvsTimeHole(time, radius, mu_t, mu_a, L_s, 1.0), 'r-')
-plt.xlabel(r"$t$ (ps)")
-plt.ylabel(r"$P ( t )$ W")
 
 plt.show()
